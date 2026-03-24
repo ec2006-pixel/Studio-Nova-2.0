@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+@app.route("/", methods=["GET"])
+def home():
+    return "Bot activo 🚀"
+    
 # ==========================================
 #    CREDENCIALES DE INTEGRACIÓN META & GROQ
 # ==========================================
