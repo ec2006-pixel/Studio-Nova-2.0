@@ -50,7 +50,7 @@ import os
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY")
 
-print("GROQ_KEY:", GROQ_KEY)  # 👈 DEBUG CLAVE
+print("GROQ_KEY cargada correctamente")  # 👈 DEBUG CLAVE
 
 # Inicialización segura de Groq
 try:
