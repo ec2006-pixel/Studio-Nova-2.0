@@ -23,7 +23,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-threading.Thread(target=monitor_sesiones, daemon=True).start()
 
 @app.route("/", methods=["GET"])
 def home():
@@ -401,3 +400,6 @@ if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     logger.info(f"🚀 Iniciando Studio Nova Engine (Meta V22.0) en puerto {puerto}")
     app.run(host='0.0.0.0', port=puerto, debug=True)
+    # Ejecutar monitor también en producción (Gunicorn)
+
+threading.Thread(target=monitor_sesiones, daemon=True).start()
