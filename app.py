@@ -47,7 +47,7 @@ try:
 except Exception as e:
     logger.error(f"Error inicializando Groq: {e}")
     client_groq = None
-
+print("GROQ_KEY:", GROQ_KEY)
 
 # ==========================================
 #    FUNCIÓN PARA ENVIAR MENSAJES (META API)
