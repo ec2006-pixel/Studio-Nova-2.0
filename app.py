@@ -23,10 +23,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+threading.Thread(target=monitor_sesiones, daemon=True).start()
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Bot activo 🚀"
+    return "OK", 200
+
+@app.route("/health", methods=["GET"])
+def health():
+    return "healthy", 200
     
 # ==========================================
 #    CREDENCIALES DE INTEGRACIÓN META & GROQ
