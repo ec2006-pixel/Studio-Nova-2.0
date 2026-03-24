@@ -38,16 +38,23 @@ GROQ_KEY = os.getenv("GROQ_API_KEY")
 ESTEBAN_CEL = os.getenv("ADMIN_PHONE_NUMBER")
 
 # Inicialización segura de Groq
+import os
+
+GROQ_KEY = os.environ.get("GROQ_API_KEY")
+
+print("GROQ_KEY:", GROQ_KEY)  # 👈 DEBUG CLAVE
+
+# Inicialización segura de Groq
 try:
     if GROQ_KEY:
         client_groq = Groq(api_key=GROQ_KEY)
+        print("✅ API KEY cargada correctamente")
     else:
-        logger.warning("Falta GROQ_API_KEY en el .env.")
+        print("❌ GROQ_API_KEY NO encontrada")
         client_groq = None
 except Exception as e:
-    logger.error(f"Error inicializando Groq: {e}")
+    print(f"❌ Error inicializando Groq: {e}")
     client_groq = None
-
 
 # ==========================================
 #    FUNCIÓN PARA ENVIAR MENSAJES (META API)
