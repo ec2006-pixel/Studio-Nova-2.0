@@ -302,7 +302,6 @@ def procesar_mensaje_bot(numero_usuario, usuario_dice):
 # ==========================================
 #    RUTAS DEL WEBHOOK (/webhook)
 # ==========================================
-
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
     """Valida hub.mode, hub.verify_token y hub.challenge para enlazado en Meta."""
@@ -323,40 +322,50 @@ def verify_webhook():
 
 @app.route('/webhook', methods=['POST'])
 def handle_incoming_messages():
-    """Procesa el JSON entrante de WhatsApp Cloud y delega al Motor."""
+    """Procesa el JSON entrante de WhatsApp Cloud y detiene los reintentos infinitos."""
     try:
         body = request.get_json()
-        # Puedes mantener el logger gigante temporalmente para auditorías si quieres
-        logger.info(f"Evento POST analizado desde Meta.")
         
-        if body.get('object'):
-            if body.get('entry') and 'changes' in body['entry'][0]:
-                cambios = body['entry'][0]['changes'][0]
-                
-                # Ignorar status indicators de Meta (sent, delivered, read)
-                if 'value' in cambios and 'messages' in cambios['value']:
-                    mensaje = cambios['value']['messages'][0]
-                    numero_remitente = mensaje['from']
-                    
-                    if mensaje.get('type') == 'text':
-                        texto_mensaje = mensaje['text']['body'].strip()
-                        # REVISAR SI LA SESIÓN EXPIRÓ (3 minutos = 180 seg)
-                        estado_actual = get_session(numero_remitente)
-                        if estado_actual and is_session_expired(estado_actual, 180):
-                            logger.info(f"Sesión expirada para {numero_remitente}. Reiniciando...")
-                            delete_session(numero_remitente)
-                        
-                        # PASAR AL MOTOR DE VENTAS (Studio Nova Engine)
-                        procesar_mensaje_bot(numero_remitente, texto_mensaje)
-                            
-            # Cumplir con la documentación de Meta para apagar retries
-            return 'EVENT_RECEIVED', 200
-        else:
+        # 1. VALIDACIÓN BÁSICA
+        if not body or body.get('object') != 'whatsapp_business_account':
             return jsonify({'error': 'Not Found'}), 404
 
+        # 2. EXTRAER DATOS SEGUROS
+        entry = body.get('entry', [{}])[0]
+        changes = entry.get('changes', [{}])[0]
+        value = changes.get('value', {})
+
+        # 3. FILTRO ANTI-BUCLE: IGNORAR NOTIFICACIONES DE ESTADO (SENT, DELIVERED, READ)
+        if 'statuses' in value:
+            return 'STATUS_RECEIVED', 200
+
+        # 4. PROCESAR MENSAJES DE TEXTO
+        if 'messages' in value:
+            mensaje = value['messages'][0]
+            numero_remitente = mensaje['from']
+            
+            if mensaje.get('type') == 'text':
+                texto_mensaje = mensaje['text']['body'].strip()
+                logger.info(f"📩 Nuevo mensaje de {numero_remitente}: {texto_mensaje}")
+
+                # REVISAR SI LA SESIÓN EXPIRÓ (Tu lógica de 180 seg)
+                estado_actual = get_session(numero_remitente)
+                
+                # Asegúrate de que 'is_session_expired' esté definida en tu archivo
+                if estado_actual and is_session_expired(estado_actual, 180):
+                    logger.info(f"⏰ Sesión expirada para {numero_remitente}. Reiniciando...")
+                    delete_session(numero_remitente)
+                
+                # PASAR AL MOTOR DE VENTAS (Studio Nova Engine)
+                procesar_mensaje_bot(numero_remitente, texto_mensaje)
+                            
+        # 5. RESPUESTA OBLIGATORIA A META PARA APAGAR RETRIES
+        return 'EVENT_RECEIVED', 200
+
     except Exception as e:
-        logger.error(f"Fallo grave procesando el Webhook POST corporativo: {e}")
-        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
+        logger.error(f"❌ Fallo procesando el Webhook: {e}")
+        # IMPORTANTE: Devolvemos 200 incluso en error para que Meta deje de reintentar
+        return 'ERROR_HANDLED', 200
 
 
 # ==========================================
