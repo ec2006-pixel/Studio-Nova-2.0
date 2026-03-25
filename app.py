@@ -83,6 +83,7 @@ def buscar_opcion_numero(texto, opciones_validas):
 #    LÓGICA CORE: STUDIO NOVA ENGINE
 # ==========================================
 def procesar_mensaje_bot(numero_usuario, usuario_dice):
+    """Motor principal con las descripciones comerciales restauradas."""
     msg_low = usuario_dice.lower().strip()
     estado_usuario = get_session(numero_usuario)
     paso_actual = estado_usuario.get("paso")
@@ -90,7 +91,7 @@ def procesar_mensaje_bot(numero_usuario, usuario_dice):
     respuesta = ""
     cerrar_sesion = False
 
-    # --- FLUJO 1. INICIO O BIENVENIDA ---
+    # --- FLUJO 1. BIENVENIDA O OPCIONES ---
     if msg_low in ['hola', 'inicio', 'menu', 'menú', 'buenos dias', 'buenas tardes'] or not paso_actual:
         estado_usuario = {"paso": "inicio"}
         respuesta = (
@@ -100,52 +101,107 @@ def procesar_mensaje_bot(numero_usuario, usuario_dice):
             "🌐 *2.* Páginas Web Premium\n"
             "🧠 *3.* Asistentes Virtuales _(Beta)_\n"
             "👨‍💻 *4.* Hablar con Esteban Casas (CEO)\n\n"
-            "👉 *Escribe el número de la opción:* ✨"
+            "👉 *Escribe el número de la opción que más te resuene:* ✨"
         )
 
-    # --- FLUJO 2. SELECCIÓN DE SERVICIO ---
+    # --- FLUJO 2. DESCRIPCIÓN DETALLADA DEL SERVICIO ---
     elif paso_actual == "inicio":
         opcion = buscar_opcion_numero(msg_low, ['1', '2', '3', '4'])
-        if opcion in ['1', '2', '3']:
-            servicios = {'1': 'Chatbots IA', '2': 'Páginas Web', '3': 'Asistentes Virtuales'}
-            estado_usuario = {"paso": "esperando_nombre", "servicio": servicios[opcion], "telefono": numero_usuario}
-            respuesta = f"🚀 Has elegido: *{servicios[opcion]}*.\n\n👉 **¿Cuál es el nombre de tu empresa o proyecto?** 🏢"
+        
+        if opcion == '1':
+            estado_usuario = {"paso": "esperando_nombre", "servicio": "Chatbots IA", "telefono": numero_usuario}
+            respuesta = (
+                "🤖 *CHATBOTS IA — Agentes de Ventas 24/7*\n\n"
+                "Imagina que tu negocio responde clientes a las 3am, envía precios automáticos y agenda citas — sin que tú levantes un dedo. ☏\ufe0f\n\n"
+                "✅ Tu asistente conoce tus productos mejor que cualquier empleado.\n"
+                "✅ Nunca se cansa. Nunca pide día libre.\n"
+                "✅ Cierra tratos a cualquier hora del día.\n\n"
+                "👉 **¿Cuál es el nombre de tu empresa o proyecto?** 🏢"
+            )
+        elif opcion == '2':
+            estado_usuario = {"paso": "esperando_nombre", "servicio": "Páginas Web", "telefono": numero_usuario}
+            respuesta = (
+                "🌐 *PÁGINAS WEB PREMIUM — Tu Imagen Vale Oro*\n\n"
+                "Tu web es lo primero que ven tus clientes antes de escribirte. Una página profesional convierte visitantes en compradores desde el primer segundo. 👀\n\n"
+                "✅ Diseño moderno adaptado a tu marca y sector.\n"
+                "✅ Posicionamiento en Google para que te encuentren solos.\n"
+                "✅ Integrada con tus redes y WhatsApp.\n\n"
+                "👉 **¿Cuál es el nombre de tu empresa?** 🏢"
+            )
+        elif opcion == '3':
+            estado_usuario = {"paso": "esperando_nombre", "servicio": "Asistentes Virtuales", "telefono": numero_usuario}
+            respuesta = (
+                "🧠 *ASISTENTES VIRTUALES — Tu Empleado Digital* _(Beta)_\n\n"
+                "No es un bot de botones. Es un asistente que entiende frases naturales, razona con contexto y ejecuta tareas complejas como reservar citas o clasificar solicitudes. 💼\n\n"
+                "✅ Maneja consultas, quejas y ventas sin intervención humana.\n"
+                "✅ Se adapta al tono y la identidad de tu marca.\n"
+                "✅ Aprende con cada interacción de tus clientes.\n\n"
+                "👉 **¿Cuál es el nombre de tu empresa o proyecto?** 🏢"
+            )
         elif opcion == '4':
-            respuesta = "👨‍💻 *Esteban Casas ha sido notificado.* En breve se pondrá en contacto contigo. ¡Hablamos pronto! 🙌"
+            respuesta = "👨‍💻 *Esteban Casas ha sido notificado.* \nEn este momento está revisando tu caso y se pondrá en contacto contigo a la brevedad. ¡Hablamos pronto! 🙌"
             cerrar_sesion = True
         else:
-            respuesta = "Por favor, elige una opción del *1 al 4* para poder ayudarte mejor. 😊"
+            respuesta = "Por favor, elige una opción del *1 al 4* para mostrarte cómo podemos escalar tu negocio. 📈"
 
     # --- FLUJO 3. NOMBRE EMPRESA ---
     elif paso_actual == "esperando_nombre":
         estado_usuario["nombre_empresa"] = usuario_dice
         estado_usuario["paso"] = "esperando_sector"
-        respuesta = f"🏢 *¡Perfecto!* Anotamos: *{usuario_dice}*\n\n👉 **¿A qué sector o producto pertenece tu negocio?** 💼"
+        respuesta = (
+            f"🏢 *¡Perfecto!* Anotamos: *{usuario_dice}*\n\n"
+            "👉 **Ahora cuéntanos: ¿a qué sector o producto pertenece tu negocio?** 💼\n"
+            "_Ej: Taller mecánico, Servicios jurídicos, Inmobiliaria, etc._"
+        )
 
-    # --- FLUJO 4. SECTOR + GROQ ---
+    # --- FLUJO 4. SECTOR + ESTRATEGIA IA (GROQ) ---
     elif paso_actual == "esperando_sector":
         estado_usuario["descripcion"] = usuario_dice
         nombre_empresa = estado_usuario.get("nombre_empresa", "tu empresa")
         servicio_elegido = estado_usuario.get("servicio", "solución digital")
         
-        funciones_generadas = "✅ Automatización de ventas\n✅ Atención 24/7\n✅ Optimización de procesos"
+        funciones_generadas = "✅ Automatización de procesos clave\n✅ Atención de Clientes 24/7\n✅ Generación automática de ventas"
+        
         if client_groq:
             try:
-                system_prompt = f"Crea 3 funciones cortas de {servicio_elegido} para una empresa de {usuario_dice} llamada {nombre_empresa}. Formato: 🚀 *Titulo*: beneficio breve."
-                proc = client_groq.chat.completions.create(model="llama-3.1-8b-instant", messages=[{"role": "user", "content": system_prompt}], temperature=0.5, max_tokens=300)
-                funciones_generadas = proc.choices[0].message.content.strip()
+                system_prompt = (
+                    f"Actúa como consultor de Studio Nova. Empresa: '{nombre_empresa}', Sector: '{usuario_dice}', Servicio: '{servicio_elegido}'.\n"
+                    f"Crea 3 funciones CONCRETAS (máx 15 palabras c/u) con formato:\n"
+                    f"🚀 *Titulo*: beneficio.\n📊 *Titulo*: beneficio.\n💰 *Titulo*: beneficio."
+                )
+                proc = client_groq.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role": "user", "content": system_prompt}],
+                    temperature=0.6
+                )
+                res_groq = proc.choices[0].message.content.strip()
+                if len(res_groq) > 20: funciones_generadas = res_groq
             except: pass
 
         estado_usuario["paso"] = "esperando_presupuesto"
-        respuesta = f"✨ *ESTRATEGIA PARA {nombre_empresa.upper()}*\n\n{funciones_generadas}\n\n💰 **¿Qué presupuesto tienes destinado?**\n1️⃣ Básico ($200)\n2️⃣ Pro ($400-$600)\n3️⃣ Corporativo (>$600)"
+        respuesta = (
+            f"✨ *ESTRATEGIA PARA {nombre_empresa.upper()}* 🚀\n\n"
+            f"{funciones_generadas}\n\n"
+            f"------------------------------------------\n"
+            f"💰 **¿Qué presupuesto tienes destinado para esta inversión?**\n\n"
+            f"1️⃣ *Plan Básico:* $200 USD\n"
+            f"2️⃣ *Plan Pro:* $400 - $600 USD\n"
+            f"3️⃣ *Plan Elite:* Más de $600 USD\n\n"
+            f"_Escribe el número de tu opción._"
+        )
 
     # --- FLUJO 5. CIERRE ---
     elif paso_actual == "esperando_presupuesto":
-        respuesta = "🎯 *¡TODO LISTO!* Esteban Casas revisará tu caso personalmente y te escribirá pronto. 🔥"
+        respuesta = (
+            "🎯 *¡PROCESO COMPLETADO!* ✅\n\n"
+            "Tu informe ha sido enviado. **Esteban Casas** revisará los detalles de tu proyecto para contactarte con una propuesta técnica a medida.\n\n"
+            "¡Es hora de llevar tu facturación al siguiente nivel! 🔥"
+        )
         cerrar_sesion = True
 
-    # GUARDADO Y ENVÍO
+    # --- ENVÍO Y PERSISTENCIA ---
     send_whatsapp_message(numero_usuario, respuesta)
+    
     if cerrar_sesion:
         delete_session(numero_usuario)
     else:
